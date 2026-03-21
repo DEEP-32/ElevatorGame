@@ -14,6 +14,7 @@ namespace ElevatorGame {
         }
 
         public void OnButtonClicked(int index) {
+            Debug.Log("Button clicked: " + index);
             GameManager.Instance.RequestElevatorForFloor(index);
         }
         

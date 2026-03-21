@@ -1,5 +1,4 @@
-﻿using System;
-using ElevatorGame.GameEntity;
+﻿using ElevatorGame.GameEntity;
 using UnityEngine;
 
 namespace ElevatorGame {
@@ -10,16 +9,9 @@ namespace ElevatorGame {
 
         public UIHandler UiHandler { get; private set; }
 
-        public static Floor GetFloor(int index) {
-            foreach (var floor in Instance.Context.Floors) {
-                if (floor.FloorNumber == index) {
-                    return floor;
-                }
-            }
-
-            return null;
-        }
-
+        // ─────────────────────────────────────────
+        // Unity Lifecycle
+        // ─────────────────────────────────────────
 
         void Awake() {
             if (Instance != null && Instance != this) {
@@ -28,40 +20,56 @@ namespace ElevatorGame {
             }
 
             Instance = this;
-
             Context = FindFirstObjectByType<LevelContext>();
             UiHandler = FindFirstObjectByType<UIHandler>();
         }
 
         void Start() {
-            foreach (var elevator in Context.Elevators) {
+            foreach (var elevator in Context.Elevators)
                 elevator.SetCurrentFloor(0);
-            }
 
             UiHandler.Initialize();
         }
 
+        // ─────────────────────────────────────────
+        // Public API
+        // ─────────────────────────────────────────
+
+        public static Floor GetFloor(int index) {
+            foreach (var floor in Instance.Context.Floors)
+                if (floor.FloorNumber == index)
+                    return floor;
+
+            return null;
+        }
 
         public void RequestElevatorForFloor(int floorIndex) {
-            Elevator bestElevator = FindBestElevator(floorIndex);
+            Elevator best = FindBestElevator(floorIndex);
 
-            if (bestElevator == null) {
+            if (best == null) {
                 Debug.LogError($"[GameManager] No elevator found for floor {floorIndex}");
                 return;
             }
 
-            bestElevator.AddFloorRequest(floorIndex);
+            best.AddFloorRequest(floorIndex);
         }
+
+        // ─────────────────────────────────────────
+        // Dispatching Logic
+        // ─────────────────────────────────────────
 
         private Elevator FindBestElevator(int floorIndex) {
             Elevator best = null;
             float bestScore = float.MaxValue;
 
             foreach (var elevator in Context.Elevators) {
-                // Skip elevators already handling this floor
-                if (elevator.IsFloorAlreadyQueued(floorIndex)) return elevator;
+                if (elevator.IsFloorAlreadyQueued(floorIndex)) {
+                    Debug.Log($"[GameManager] {elevator.name} already handling floor {floorIndex}");
+                    return elevator;
+                }
 
                 float score = GetElevatorScore(elevator, floorIndex);
+                Debug.Log($"[GameManager] {elevator.name} score: {score}");
 
                 if (score < bestScore) {
                     bestScore = score;
@@ -69,30 +77,46 @@ namespace ElevatorGame {
                 }
             }
 
+            Debug.Log($"[GameManager] Best: {best?.name} with score {bestScore}");
             return best;
         }
 
         private float GetElevatorScore(Elevator elevator, int floorIndex) {
-            float distance = Mathf.Abs(elevator.CurrentFloor - floorIndex);
+            Floor requestedFloor = GetFloor(floorIndex);
+            if (requestedFloor == null) return float.MaxValue;
 
-            // Idle elevator — pure distance score
+            // Real world Y distance — not floor index arithmetic
+            float distance = Mathf.Abs(
+                elevator.transform.position.y - requestedFloor.ElevatorPos.position.y
+            );
+
             if (!elevator.IsMoving)
                 return distance;
 
-            // Moving elevator — check if floor is on the way
             if (IsFloorOnTheWay(elevator, floorIndex))
-                return distance * 0.5f; // reward — prefer this elevator
+                return distance * 0.5f;
 
-            // Moving but wrong direction — penalise
             return distance * 2f;
         }
 
         private bool IsFloorOnTheWay(Elevator elevator, int floorIndex) {
-            bool movingUp = elevator.TargetFloor > elevator.CurrentFloor;
-            bool isAbove = floorIndex > elevator.CurrentFloor;
-            bool isBelow = floorIndex < elevator.CurrentFloor;
+            Floor requestedFloor = GetFloor(floorIndex);
+            Floor targetFloor = GetFloor(elevator.TargetFloor);
 
-            return (movingUp && isAbove) || (!movingUp && isBelow);
+            if (requestedFloor == null || targetFloor == null) return false;
+
+            float elevatorY = elevator.transform.position.y;
+            float requestedY = requestedFloor.ElevatorPos.position.y;
+            float targetY = targetFloor.ElevatorPos.position.y;
+
+            bool movingUp = targetY > elevatorY;
+
+            if (movingUp)
+                // On the way up — requested floor must be between here and target
+                return requestedY > elevatorY && requestedY <= targetY;
+            else
+                // On the way down — requested floor must be between here and target
+                return requestedY < elevatorY && requestedY >= targetY;
         }
     }
 }
