@@ -4,11 +4,23 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace ElevatorGame.GameEntity {
+    /// <summary>
+    /// RECIPIENT / EXECUTOR
+    /// 
+    /// Role: Represents an individual elevator unit.
+    /// Responsibility: Manages its own internal queue, handles movement requests, 
+    /// and updates its own UI.
+    /// </summary>
     public class Elevator : MonoBehaviour {
         [SerializeField] private Mover mover;
         [SerializeField] private ElevatorUI elevatorUI;
         [SerializeField] private int delayBetweenFloors = 1;
 
+        /// <summary>
+        /// Current set of pending floor indices.
+        /// Architecture Note: Using a Queue ensures First-In-First-Out processing, 
+        /// which is modified by "Smart Insertion" logic when moving.
+        /// </summary>
         private Queue<int> floorsToGo = new Queue<int>();
 
         public bool IsMoving => mover.IsMoving;
@@ -26,6 +38,9 @@ namespace ElevatorGame.GameEntity {
             elevatorUI.SetFloorText(floorNumber);
         }
 
+        /// <summary>
+        /// Entry point for the GameManager to assign a new task to this elevator.
+        /// </summary>
         public void AddFloorRequest(int floorNumber) {
             if (IsFloorAlreadyQueued(floorNumber)) {
                 Debug.Log($"[Elevator] Floor {floorNumber} already queued, skipping.");
@@ -96,6 +111,10 @@ namespace ElevatorGame.GameEntity {
         // Smart Queue Insertion
         // ─────────────────────────────────────────
 
+        /// <summary>
+        /// The "Brain" of the individual elevator's movement.
+        /// It handles both sequential queuing and dynamic redirection (mid-flight).
+        /// </summary>
         private void InsertFloorSorted(int floorNumber)
         {
             bool movingUp = TargetFloor > CurrentFloor;

@@ -4,8 +4,13 @@ using UnityEngine;
 
 namespace ElevatorGame.GameEntity {
     /// <summary>
-    /// Moves a transform smoothly to a target Y position using
-    /// AnimationCurve for easing and LerpUnclamped for overshoot/bounce support.
+    /// UTILITY / ATOMIC MOVEMENT
+    /// 
+    /// Role: Low-level motor for any Transform.
+    /// Responsibility: Handles frame-by-frame interpolation (Lerp), duration scaling, 
+    /// and easing curves.
+    /// Architecture Note: Keeping this generic and decoupled from "Elevator" logic 
+    /// means we could use it for doors, cameras, etc.
     /// </summary>
     public class Mover : MonoBehaviour {
         [Header("Movement Settings")]

@@ -4,6 +4,12 @@ using UnityEngine;
 using UnityEngine.UI;
 
 namespace ElevatorGame {
+    /// <summary>
+    /// UI COMPONENT
+    /// 
+    /// Role: Represents an individual button on the elevator control panel.
+    /// Responsibility: Holds the floor index and a reference to its UI Button.
+    /// </summary>
     public class ElevatorButton : MonoBehaviour {
         
         public int FloorNumber => floorNumber;

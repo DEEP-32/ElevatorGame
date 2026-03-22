@@ -4,7 +4,13 @@ using UnityEngine;
 
 namespace ElevatorGame {
     
-    //This class will hold all the data in our scene to reference it
+    /// <summary>
+    /// SCENE DATA WRAPPER
+    /// 
+    /// Role: Exposes specific scene objects to the GameManager.
+    /// Purpose: Decentralizes scene hierarchy from logic; if we move floors/elevators, 
+    /// we only update this container.
+    /// </summary>
     public class LevelContext : MonoBehaviour {
         [SerializeField] List<Floor> floors;
         [SerializeField] List<Elevator> elevators;
